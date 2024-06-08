@@ -1,0 +1,63 @@
+body {
+    font-family: Arial, sans-serif;
+    text-align: center;
+    background-color: #f0f0f0;
+}
+
+.container {
+    margin: 20px auto;
+    width: 80%;
+}
+
+h1 {
+    margin-bottom: 100px; /* Add margin to the bottom of the title */
+}
+
+.wheel-container {
+    position: relative;
+    margin: 0 auto;
+    width: 500px;
+    height: 500px;
+}
+
+.pointer {
+    width: 0;
+    height: 0;
+    border-left: 20px solid transparent;
+    border-right: 20px solid transparent;
+    border-top: 30px solid red;
+    position: absolute;
+    top: -35px; /* Adjust this value to control the distance from the wheel */
+    left: 50%;
+    transform: translateX(-50%);
+}
+
+button {
+    margin-top: 20px;
+}
+
+table {
+    margin: 20px auto;
+    border-collapse: collapse;
+    width: 80%;
+}
+
+table, th, td {
+    border: 1px solid black;
+}
+
+th, td {
+    padding: 10px;
+    text-align: center;
+}
+
+th {
+    background-color: #f2f2f2;
+}
+
+
+#winLossTable {
+    margin-top: 20px; /* Add some space between the score table and the win-loss table */
+}
+
+
