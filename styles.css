@@ -60,4 +60,16 @@ th {
     margin-top: 20px; /* Add some space between the score table and the win-loss table */
 }
 
+.banner {
+    margin-top: 15px;
+    padding: 10px;
+    background: rgba(255, 215, 0, 0.9);
+    font-size: 24px;
+    font-weight: bold;
+}
+
+.hidden {
+    display: none;
+}
+
 
