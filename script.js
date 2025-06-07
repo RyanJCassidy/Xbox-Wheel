@@ -85,7 +85,7 @@ function spinWheel() {
     spinStartTimestamp = null;
     if (spinRequest) cancelAnimationFrame(spinRequest);
     document.getElementById('winnerBanner').classList.add('hidden');
-    rotateWheel();
+    spinRequest = requestAnimationFrame(rotateWheel);
 }
 
 function rotateWheel(timestamp) {
