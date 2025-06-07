@@ -26,9 +26,26 @@ let spinAngleStart = 10;
 let spinTime = 0;
 let spinTimeTotal = 0;
 
+let socket;
+let scores = JSON.parse(localStorage.getItem('scores'));
+if (!scores) {
+    scores = [
+        { ryanTeam: 'Astros', ryanScore: '4', jaydenTeam: 'Diamondbacks', jaydenScore: '6' }
+    ];
+    for (let i = 0; i < 8; i++) {
+        scores.push({ ryanTeam: '', ryanScore: '', jaydenTeam: '', jaydenScore: '' });
+    }
+}
+
 document.addEventListener("DOMContentLoaded", () => {
     drawRouletteWheel();
+    fetchScoreboard();
     renderScoreTable();
+    socket = io();
+    socket.on('scoreUpdate', data => {
+        updateScoreboardTables(data);
+        renderScoreTable();
+    });
 });
 
 function drawRouletteWheel() {
@@ -81,7 +98,7 @@ function stopRotateWheel() {
     const index = Math.floor((360 - degrees % 360) / arcd);
     ctx.save();
     ctx.font = 'bold 30px Arial';
-    ctx.fillStyle = 'white'; // Explicitly set the text color to black
+    ctx.fillStyle = 'white';
     const text = teams[index];
     ctx.fillText(text, 250 - ctx.measureText(text).width / 2, 250 + 10);
     ctx.restore();
@@ -94,17 +111,46 @@ function easeOut(t, b, c, d) {
     return b + c * (tc + -3 * ts + 3 * t);
 }
 
-// ------------------- Score Table Logic -------------------
+// ------------------- Server-Backed Scoreboard -------------------
 
-let scores = JSON.parse(localStorage.getItem('scores'));
-if (!scores) {
-    scores = [
-        { ryanTeam: 'Astros', ryanScore: '4', jaydenTeam: 'Diamondbacks', jaydenScore: '6' }
-    ];
-    for (let i = 0; i < 8; i++) {
-        scores.push({ ryanTeam: '', ryanScore: '', jaydenTeam: '', jaydenScore: '' });
-    }
+function fetchScoreboard() {
+    fetch('/api/scoreboard')
+        .then(res => res.json())
+        .then(data => {
+            updateScoreboardTables(data);
+            renderScoreTable(); // ensure local rendering if needed
+        })
+        .catch(err => console.error('Failed to load scoreboard', err));
 }
+
+function updateScoreboardTables(data) {
+    if (!data) return;
+    const tbody = document.getElementById('scoreTable').querySelector('tbody');
+    tbody.innerHTML = '';
+    data.scores.forEach(row => {
+        const tr = document.createElement('tr');
+        tr.innerHTML = `<td>${row.team1}</td><td>${row.score1}</td><td>${row.team2}</td><td>${row.score2}</td>`;
+        tbody.appendChild(tr);
+    });
+
+    const winBody = document.getElementById('winLossTable').querySelector('tbody');
+    winBody.innerHTML = '';
+    data.wins.forEach(w => {
+        const tr = document.createElement('tr');
+        tr.innerHTML = `<td>${w.player}</td><td>${w.wins}</td><td>${w.losses}</td>`;
+        winBody.appendChild(tr);
+    });
+}
+
+function pushScoreboard(data) {
+    fetch('/api/scoreboard', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(data)
+    }).catch(err => console.error('Failed to push scoreboard', err));
+}
+
+// ------------------- Local Editable Scoreboard -------------------
 
 function saveScores() {
     localStorage.setItem('scores', JSON.stringify(scores));
@@ -112,6 +158,7 @@ function saveScores() {
 
 function renderScoreTable() {
     const tbody = document.querySelector('#scoreTable tbody');
+    if (!tbody) return;
     tbody.innerHTML = '';
     scores.forEach((row, index) => {
         const tr = document.createElement('tr');
@@ -144,7 +191,5 @@ function updateScore(index, field, value) {
     scores[index][field] = value;
     saveScores();
 }
-
-
 
 
