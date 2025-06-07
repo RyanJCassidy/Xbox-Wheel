@@ -26,7 +26,10 @@ let spinAngleStart = 10;
 let spinTime = 0;
 let spinTimeTotal = 0;
 
-document.addEventListener("DOMContentLoaded", drawRouletteWheel);
+document.addEventListener("DOMContentLoaded", () => {
+    drawRouletteWheel();
+    renderScoreTable();
+});
 
 function drawRouletteWheel() {
     ctx.clearRect(0, 0, 500, 500);
@@ -90,6 +93,58 @@ function easeOut(t, b, c, d) {
     const tc = ts * t;
     return b + c * (tc + -3 * ts + 3 * t);
 }
+
+// ------------------- Score Table Logic -------------------
+
+let scores = JSON.parse(localStorage.getItem('scores'));
+if (!scores) {
+    scores = [
+        { ryanTeam: 'Astros', ryanScore: '4', jaydenTeam: 'Diamondbacks', jaydenScore: '6' }
+    ];
+    for (let i = 0; i < 8; i++) {
+        scores.push({ ryanTeam: '', ryanScore: '', jaydenTeam: '', jaydenScore: '' });
+    }
+}
+
+function saveScores() {
+    localStorage.setItem('scores', JSON.stringify(scores));
+}
+
+function renderScoreTable() {
+    const tbody = document.querySelector('#scoreTable tbody');
+    tbody.innerHTML = '';
+    scores.forEach((row, index) => {
+        const tr = document.createElement('tr');
+
+        ['ryanTeam', 'ryanScore', 'jaydenTeam', 'jaydenScore'].forEach(field => {
+            const td = document.createElement('td');
+            td.textContent = row[field];
+            td.contentEditable = 'true';
+            td.dataset.index = index;
+            td.dataset.field = field;
+            if (field === 'ryanScore') td.style.color = 'red';
+            if (field === 'jaydenScore') td.style.color = 'green';
+            td.addEventListener('blur', handleCellEdit);
+            tr.appendChild(td);
+        });
+
+        tbody.appendChild(tr);
+    });
+}
+
+function handleCellEdit(e) {
+    const td = e.target;
+    const index = parseInt(td.dataset.index, 10);
+    const field = td.dataset.field;
+    updateScore(index, field, td.textContent.trim());
+}
+
+function updateScore(index, field, value) {
+    if (!scores[index]) return;
+    scores[index][field] = value;
+    saveScores();
+}
+
 
 
 
