@@ -21,7 +21,8 @@ const colors = [
 
 let startAngle = 0;
 let arc = Math.PI / (teams.length / 2);
-let spinTimeout = null;
+let spinRequest = null;
+let spinStartTimestamp = null;
 let spinAngleStart = 10;
 let spinTime = 0;
 let spinTimeTotal = 0;
@@ -48,7 +49,7 @@ document.addEventListener("DOMContentLoaded", () => {
     });
 });
 
-function drawRouletteWheel() {
+function drawRouletteWheel(highlightIndex = -1) {
     ctx.clearRect(0, 0, 500, 500);
     ctx.strokeStyle = "black";
     ctx.lineWidth = 2;
@@ -60,6 +61,11 @@ function drawRouletteWheel() {
         ctx.arc(250, 250, 250, angle, angle + arc, false);
         ctx.arc(250, 250, 0, angle + arc, angle, true);
         ctx.fill();
+        if (i === highlightIndex) {
+            ctx.lineWidth = 5;
+            ctx.strokeStyle = '#FFD700';
+            ctx.stroke();
+        }
         ctx.save();
         ctx.fillStyle = "black";
         ctx.translate(250, 250);
@@ -75,33 +81,47 @@ function spinWheel() {
     spinSound.play();
     spinAngleStart = Math.random() * 10 + 10;
     spinTime = 0;
-    spinTimeTotal = Math.random() * 3 + 4 * 1000;
+    spinTimeTotal = (Math.random() * 3 + 4) * 1000;
+    spinStartTimestamp = null;
+    if (spinRequest) cancelAnimationFrame(spinRequest);
+    document.getElementById('winnerBanner').classList.add('hidden');
     rotateWheel();
 }
 
-function rotateWheel() {
-    spinTime += 30;
+function rotateWheel(timestamp) {
+    if (!spinStartTimestamp) spinStartTimestamp = timestamp;
+    spinTime = timestamp - spinStartTimestamp;
     if (spinTime >= spinTimeTotal) {
         stopRotateWheel();
         return;
     }
     const spinAngle = spinAngleStart - easeOut(spinTime, 0, spinAngleStart, spinTimeTotal);
     startAngle += (spinAngle * Math.PI / 180);
-    drawRouletteWheel();
-    spinTimeout = setTimeout(rotateWheel, 30);
-}
-
-function stopRotateWheel() {
-    clearTimeout(spinTimeout);
     const degrees = startAngle * 180 / Math.PI + 90;
     const arcd = arc * 180 / Math.PI;
     const index = Math.floor((360 - degrees % 360) / arcd);
+    drawRouletteWheel(index);
+    spinRequest = requestAnimationFrame(rotateWheel);
+}
+
+function stopRotateWheel() {
+    if (spinRequest) cancelAnimationFrame(spinRequest);
+    const degrees = startAngle * 180 / Math.PI + 90;
+    const arcd = arc * 180 / Math.PI;
+    const index = Math.floor((360 - degrees % 360) / arcd);
+    drawRouletteWheel(index);
+
     ctx.save();
     ctx.font = 'bold 30px Arial';
     ctx.fillStyle = 'white';
     const text = teams[index];
     ctx.fillText(text, 250 - ctx.measureText(text).width / 2, 250 + 10);
     ctx.restore();
+
+    const banner = document.getElementById('winnerBanner');
+    banner.textContent = `Winner: ${text}`;
+    banner.classList.remove('hidden');
+
     winSound.play();
 }
 
