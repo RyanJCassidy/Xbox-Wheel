@@ -26,7 +26,14 @@ let spinAngleStart = 10;
 let spinTime = 0;
 let spinTimeTotal = 0;
 
-document.addEventListener("DOMContentLoaded", drawRouletteWheel);
+let socket;
+
+document.addEventListener("DOMContentLoaded", () => {
+    drawRouletteWheel();
+    fetchScoreboard();
+    socket = io();
+    socket.on('scoreUpdate', updateScoreboardTables);
+});
 
 function drawRouletteWheel() {
     ctx.clearRect(0, 0, 500, 500);
@@ -89,6 +96,40 @@ function easeOut(t, b, c, d) {
     const ts = (t /= d) * t;
     const tc = ts * t;
     return b + c * (tc + -3 * ts + 3 * t);
+}
+
+function fetchScoreboard() {
+    fetch('/api/scoreboard')
+        .then(res => res.json())
+        .then(updateScoreboardTables)
+        .catch(err => console.error('Failed to load scoreboard', err));
+}
+
+function updateScoreboardTables(data) {
+    if (!data) return;
+    const tbody = document.getElementById('scoreTable').querySelector('tbody');
+    tbody.innerHTML = '';
+    data.scores.forEach(row => {
+        const tr = document.createElement('tr');
+        tr.innerHTML = `<td>${row.team1}</td><td>${row.score1}</td><td>${row.team2}</td><td>${row.score2}</td>`;
+        tbody.appendChild(tr);
+    });
+
+    const winBody = document.getElementById('winLossTable').querySelector('tbody');
+    winBody.innerHTML = '';
+    data.wins.forEach(w => {
+        const tr = document.createElement('tr');
+        tr.innerHTML = `<td>${w.player}</td><td>${w.wins}</td><td>${w.losses}</td>`;
+        winBody.appendChild(tr);
+    });
+}
+
+function pushScoreboard(data) {
+    fetch('/api/scoreboard', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(data)
+    }).catch(err => console.error('Failed to push scoreboard', err));
 }
 
 
