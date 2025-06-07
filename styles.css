@@ -4,15 +4,6 @@ body {
     background-color: #f0f0f0;
 }
 
-.container {
-    margin: 20px auto;
-    width: 80%;
-}
-
-h1 {
-    margin-bottom: 100px; /* Add margin to the bottom of the title */
-}
-
 .wheel-container {
     position: relative;
     margin: 0 auto;
@@ -32,32 +23,5 @@ h1 {
     transform: translateX(-50%);
 }
 
-button {
-    margin-top: 20px;
-}
-
-table {
-    margin: 20px auto;
-    border-collapse: collapse;
-    width: 80%;
-}
-
-table, th, td {
-    border: 1px solid black;
-}
-
-th, td {
-    padding: 10px;
-    text-align: center;
-}
-
-th {
-    background-color: #f2f2f2;
-}
-
-
-#winLossTable {
-    margin-top: 20px; /* Add some space between the score table and the win-loss table */
-}
 
 

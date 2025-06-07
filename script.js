@@ -27,12 +27,25 @@ let spinTime = 0;
 let spinTimeTotal = 0;
 
 let socket;
+let scores = JSON.parse(localStorage.getItem('scores'));
+if (!scores) {
+    scores = [
+        { ryanTeam: 'Astros', ryanScore: '4', jaydenTeam: 'Diamondbacks', jaydenScore: '6' }
+    ];
+    for (let i = 0; i < 8; i++) {
+        scores.push({ ryanTeam: '', ryanScore: '', jaydenTeam: '', jaydenScore: '' });
+    }
+}
 
 document.addEventListener("DOMContentLoaded", () => {
     drawRouletteWheel();
     fetchScoreboard();
+    renderScoreTable();
     socket = io();
-    socket.on('scoreUpdate', updateScoreboardTables);
+    socket.on('scoreUpdate', data => {
+        updateScoreboardTables(data);
+        renderScoreTable();
+    });
 });
 
 function drawRouletteWheel() {
@@ -85,7 +98,7 @@ function stopRotateWheel() {
     const index = Math.floor((360 - degrees % 360) / arcd);
     ctx.save();
     ctx.font = 'bold 30px Arial';
-    ctx.fillStyle = 'white'; // Explicitly set the text color to black
+    ctx.fillStyle = 'white';
     const text = teams[index];
     ctx.fillText(text, 250 - ctx.measureText(text).width / 2, 250 + 10);
     ctx.restore();
@@ -98,10 +111,15 @@ function easeOut(t, b, c, d) {
     return b + c * (tc + -3 * ts + 3 * t);
 }
 
+// ------------------- Server-Backed Scoreboard -------------------
+
 function fetchScoreboard() {
     fetch('/api/scoreboard')
         .then(res => res.json())
-        .then(updateScoreboardTables)
+        .then(data => {
+            updateScoreboardTables(data);
+            renderScoreTable(); // ensure local rendering if needed
+        })
         .catch(err => console.error('Failed to load scoreboard', err));
 }
 
@@ -132,5 +150,46 @@ function pushScoreboard(data) {
     }).catch(err => console.error('Failed to push scoreboard', err));
 }
 
+// ------------------- Local Editable Scoreboard -------------------
+
+function saveScores() {
+    localStorage.setItem('scores', JSON.stringify(scores));
+}
+
+function renderScoreTable() {
+    const tbody = document.querySelector('#scoreTable tbody');
+    if (!tbody) return;
+    tbody.innerHTML = '';
+    scores.forEach((row, index) => {
+        const tr = document.createElement('tr');
+
+        ['ryanTeam', 'ryanScore', 'jaydenTeam', 'jaydenScore'].forEach(field => {
+            const td = document.createElement('td');
+            td.textContent = row[field];
+            td.contentEditable = 'true';
+            td.dataset.index = index;
+            td.dataset.field = field;
+            if (field === 'ryanScore') td.style.color = 'red';
+            if (field === 'jaydenScore') td.style.color = 'green';
+            td.addEventListener('blur', handleCellEdit);
+            tr.appendChild(td);
+        });
+
+        tbody.appendChild(tr);
+    });
+}
+
+function handleCellEdit(e) {
+    const td = e.target;
+    const index = parseInt(td.dataset.index, 10);
+    const field = td.dataset.field;
+    updateScore(index, field, td.textContent.trim());
+}
+
+function updateScore(index, field, value) {
+    if (!scores[index]) return;
+    scores[index][field] = value;
+    saveScores();
+}
 
 
